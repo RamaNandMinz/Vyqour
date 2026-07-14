@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["debian-openssl-1.1.x", "linux-arm64-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentType {
+  PREPAID
+  COD
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  COD_CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum CategoryType {
+  PRIMARY
+  ACCESSORY
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  addresses     Address[]
+  carts         Cart[]
+  orders        Order[]
+  sessions      Session[]
+  accounts      Account[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  pincode   String
+  phone     String
+  isDefault Boolean @default(false)
+  user      User    @relation(fields: [userId], references: [id])
+  orders    Order[]
+}
+
+model Category {
+  id        String       @id @default(cuid())
+  name      String
+  slug      String       @unique
+  type      CategoryType
+  createdAt DateTime     @default(now())
+  products  Product[]
+}
+
+model Product {
+  id           String            @id @default(cuid())
+  name         String
+  slug         String            @unique
+  description  String?
+  categoryId   String
+  basePrice    Float
+  qikinkSku    String?
+  images       String[]
+  isActive     Boolean           @default(true)
+  isBestSeller Boolean           @default(false)
+  isNewArrival Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  category     Category          @relation(fields: [categoryId], references: [id])
+  variants     ProductVariant[]
+  collections  CollectionProduct[]
+}
+
+model ProductVariant {
+  id          String  @id @default(cuid())
+  productId   String
+  size        String
+  color       String
+  sku         String  @unique
+  stock       Int     @default(0)
+  priceOverride Float?
+  product     Product @relation(fields: [productId], references: [id])
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+}
+
+model Collection {
+  id        String              @id @default(cuid())
+  name      String
+  slug      String              @unique
+  description String?
+  heroImage String?
+  isActive  Boolean             @default(true)
+  products  CollectionProduct[]
+}
+
+model CollectionProduct {
+  collectionId String
+  productId    String
+  collection   Collection @relation(fields: [collectionId], references: [id])
+  product      Product    @relation(fields: [productId], references: [id])
+
+  @@id([collectionId, productId])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?
+  sessionId String?
+  createdAt DateTime   @default(now())
+  user      User?      @relation(fields: [userId], references: [id])
+  items     CartItem[]
+}
+
+model CartItem {
+  id               String         @id @default(cuid())
+  cartId           String
+  productVariantId String
+  quantity         Int            @default(1)
+  cart             Cart           @relation(fields: [cartId], references: [id])
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+}
+
+model Order {
+  id               String       @id @default(cuid())
+  userId           String?
+  guestEmail       String?
+  addressId        String
+  status           OrderStatus  @default(PENDING)
+  paymentMethod    PaymentType
+  razorpayOrderId  String?
+  razorpayPaymentId String?
+  qikinkOrderId    String?
+  totalAmount      Float
+  createdAt        DateTime     @default(now())
+  user             User?        @relation(fields: [userId], references: [id])
+  address          Address      @relation(fields: [addressId], references: [id])
+  items            OrderItem[]
+}
+
+model OrderItem {
+  id               String         @id @default(cuid())
+  orderId          String
+  productVariantId String
+  quantity         Int
+  priceAtPurchase  Float
+  order            Order          @relation(fields: [orderId], references: [id])
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+}
