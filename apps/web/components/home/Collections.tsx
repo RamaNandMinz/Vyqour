@@ -1,10 +1,7 @@
-import React from 'react';
-import CategoryNav from './CategoryNav';
-
 export default function Collections() {
   return (
-    <div className="container mx-auto p-4 pt-6 md:p-6 lg:pb-20 lg:pt-24">
-      <CategoryNav title="Collections" />
+    <div className="p-4 bg-gray-100 dark:bg-gray-800">
+      <h2 className="text-2xl font-bold">Collections</h2>
       <p>Coming soon...</p>
     </div>
   );
