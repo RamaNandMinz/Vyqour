@@ -12,8 +12,17 @@ const path = require("path");
 const OpenAI = require("openai");
 
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
-const PROJECT_ROOT = process.cwd();
-const PROGRESS_FILE = path.join(PROJECT_ROOT, ".agent-progress.json");
+
+// PROJECT_ROOT is always the parent of the folder this script lives in
+// (i.e. if this file is at ~/vyqour-app/.agent/agent.js, PROJECT_ROOT is ~/vyqour-app).
+// This is fixed regardless of what directory you run `node agent.js` from,
+// so the agent can never accidentally create files inside .agent/ itself.
+const SCRIPT_DIR = __dirname;
+const PROJECT_ROOT = path.resolve(SCRIPT_DIR, "..");
+const PROGRESS_FILE = path.join(SCRIPT_DIR, ".agent-progress.json");
+
+console.log(`[config] Agent script dir: ${SCRIPT_DIR}`);
+console.log(`[config] Project root (all file paths are relative to this): ${PROJECT_ROOT}`);
 
 if (!NVIDIA_API_KEY) {
   console.error("ERROR: NVIDIA_API_KEY not set. Add it to ~/.bashrc and run `source ~/.bashrc`.");
@@ -66,6 +75,12 @@ function failTask(progress, task, reason) {
 // Models tried in this order. First one that responds successfully wins.
 // Edit this list any time based on what's live in your account.
 const MODEL_PRIORITY = [
+  "deepseek-ai/deepseek-v4-flash",
+  "qwen/qwen3.5-397b-a17b",
+  "qwen/qwen3-next-80b-a3b-instruct",
+  "meta/llama-3.3-70b-instruct",
+  "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+  "meta/llama-3.1-70b-instruct",
   "meta/llama-3.1-8b-instruct", // final fallback, always usually available
 ];
 
@@ -240,3 +255,4 @@ async function main() {
 }
 
 main();
+

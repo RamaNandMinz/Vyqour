@@ -3,6 +3,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import { prisma } from "../lib/prisma.js";
+import { pushOrderToQikink } from "./qikink.js";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || "",
@@ -113,6 +114,13 @@ export async function checkoutRoutes(app: FastifyInstance) {
           razorpayPaymentId,
         },
       });
+
+      try {
+        await pushOrderToQikink(order.id);
+      } catch (qikinkErr: any) {
+        request.log.error(qikinkErr, "Qikink push failed for order " + order.id);
+      }
+
       return reply.send({ success: true, order });
     } catch (err: any) {
       return reply.status(404).send({ error: "Order not found" });
@@ -147,6 +155,12 @@ export async function checkoutRoutes(app: FastifyInstance) {
         },
         include: { items: true },
       });
+
+      try {
+        await pushOrderToQikink(order.id);
+      } catch (qikinkErr: any) {
+        request.log.error(qikinkErr, "Qikink push failed for order " + order.id);
+      }
 
       return reply.send({ success: true, order });
     } catch (err: any) {
