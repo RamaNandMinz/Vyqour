@@ -1,8 +1,57 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  basePrice: number;
+  images: string[];
+}
+
 export default function BestSellers() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products?isBestSeller=true`)
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data.products || [];
+        setProducts(list.slice(0, 8));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
   return (
-    <div className="p-4 bg-gray-100 dark:bg-gray-800">
-      <h2 className="text-2xl font-bold">Best Sellers</h2>
-      <p>Coming soon...</p>
+    <div className="bg-brand-black py-8">
+      <div className="container mx-auto p-4 md:p-6 lg:p-8">
+        <h2 className="text-2xl font-bold text-white mb-6">Best Sellers</h2>
+        {loading && <p className="text-white">Loading best sellers...</p>}
+        {!loading && products.length === 0 && (
+          <p className="text-white">No best sellers found</p>
+        )}
+        {!loading && products.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {products.map((p) => (
+              <Link key={p.id} href={`/product/${p.slug}`} className="block">
+                <div className="bg-gray-900 rounded-lg overflow-hidden">
+                  {p.images?.[0] && (
+                    <img src={p.images[0]} alt={p.name} className="w-full h-48 object-cover" />
+                  )}
+                  <div className="p-3">
+                    <h3 className="text-white text-sm font-semibold">{p.name}</h3>
+                    <p className="text-electric-blue-accent font-bold">₹{p.basePrice}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
