@@ -75,12 +75,6 @@ function failTask(progress, task, reason) {
 // Models tried in this order. First one that responds successfully wins.
 // Edit this list any time based on what's live in your account.
 const MODEL_PRIORITY = [
-  "deepseek-ai/deepseek-v4-flash",
-  "qwen/qwen3.5-397b-a17b",
-  "qwen/qwen3-next-80b-a3b-instruct",
-  "meta/llama-3.3-70b-instruct",
-  "nvidia/llama-3.3-nemotron-super-49b-v1.5",
-  "meta/llama-3.1-70b-instruct",
   "meta/llama-3.1-8b-instruct", // final fallback, always usually available
 ];
 
@@ -96,7 +90,18 @@ function readFile(relPath) {
   return fs.readFileSync(full, "utf8");
 }
 
+const ALLOWED_PREFIXES = ["apps/", "packages/", "prisma/"];
+// Top-level files (not inside a folder) are also allowed, e.g. README.md, .gitignore
+function isPathAllowed(relPath) {
+  const normalized = relPath.replace(/^\.\//, "");
+  if (!normalized.includes("/")) return true; // top-level file, fine
+  return ALLOWED_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+}
+
 function writeFile(relPath, content) {
+  if (!isPathAllowed(relPath)) {
+    return `BLOCKED: "${relPath}" does not start with apps/, packages/, or prisma/. This looks like a monorepo path mistake. Re-check the correct path (e.g. apps/web/... or apps/server/...) and try again with WRITE_FILE using the corrected path.`;
+  }
   const full = path.join(PROJECT_ROOT, relPath);
   fs.mkdirSync(path.dirname(full), { recursive: true });
   fs.writeFileSync(full, content, "utf8");
@@ -114,6 +119,20 @@ const history = [
   {
     role: "system",
     content: `You are a coding agent working inside the project at ${PROJECT_ROOT}.
+
+CRITICAL PATH RULE: This is a monorepo. ALL paths you write to MUST start with one of these exact prefixes:
+- apps/web/        (Next.js storefront)
+- apps/admin/       (Next.js admin panel)
+- apps/server/       (Fastify backend)
+- packages/shared/   (shared code)
+- prisma/            (database schema)
+
+NEVER write to a bare path like "app/page.tsx" or "components/Hero.tsx" or "src/routes/cart.ts" —
+these are WRONG. The correct equivalents are "apps/web/app/page.tsx", "apps/web/components/Hero.tsx",
+"apps/server/src/routes/cart.ts". Always double check your WRITE_FILE path starts with apps/ or
+packages/ or prisma/ before writing. If you are unsure which app a file belongs to, use LIST_DIR on
+"apps" first to check the existing structure.
+
 When you need to read a file, respond ONLY with: READ_FILE: <relative_path>
 When you need to list a directory, respond ONLY with: LIST_DIR: <relative_path>
 When you want to write/edit a file, respond ONLY with:
