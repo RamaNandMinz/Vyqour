@@ -66,12 +66,6 @@ function failTask(progress, task, reason) {
 // Models tried in this order. First one that responds successfully wins.
 // Edit this list any time based on what's live in your account.
 const MODEL_PRIORITY = [
-  "deepseek-ai/deepseek-v4-flash",
-  "qwen/qwen3.5-397b-a17b",
-  "qwen/qwen3-next-80b-a3b-instruct",
-  "meta/llama-3.3-70b-instruct",
-  "nvidia/llama-3.3-nemotron-super-49b-v1.5",
-  "meta/llama-3.1-70b-instruct",
   "meta/llama-3.1-8b-instruct", // final fallback, always usually available
 ];
 
