@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.bg-brand-black {
+  @apply bg-gray-900;
+}
+
+.bg-brand-orange {
+  @apply bg-orange-500;
+}
+
+.bg-brand-orange-dark {
+  @apply bg-orange-600;
+}
+
+.text-white {
+  @apply text-white;
+}
+
+.brand-orange {
+  @apply text-orange-500;
+}
+
+.brand-orange-dark {
+  @apply text-orange-600;
+}
+
+/* Add this to make sure global styles are applied */
+@tailwind utilities;
