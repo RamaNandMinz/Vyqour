@@ -4,6 +4,7 @@ import cookie from "@fastify/cookie";
 import { prisma } from "./lib/prisma.js";
 import { redis } from "./lib/redis.js";
 import { auth } from "./lib/auth.js";
+import { registerRoutes } from "./routes/index.js";
 
 const app = Fastify({
   logger: {
@@ -40,6 +41,9 @@ app.get("/api/auth/session", async (request, _reply) => {
     return null;
   }
 });
+
+// Register API routes
+await registerRoutes(app);
 
 // Health check route
 app.get("/health", async (_request, _reply) => {
