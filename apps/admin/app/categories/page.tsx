@@ -1,40 +1,59 @@
-import { useQuery, useClient } from 'next/headers';
-import Link from 'next/link';
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+}
 
 export default function CategoriesPage() {
-  useClient();
-  const { data, error } = useQuery(
-    () =>
-      fetch(process.env.NEXT_PUBLIC_API_URL + "/api/categories")
-        .then((res) => res.json())
-  );
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!data) return <div>Loading...</div>;
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`)
+      .then((res) => res.json())
+      .then((data) => {
+        setCategories(Array.isArray(data) ? data : data.categories || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   return (
-    <div>
-      <h1>Categories</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Slug</th>
-            <th>Type</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((category) => (
-            <tr key={category.id}>
-              <td>{category.name}</td>
-              <td>{category.slug}</td>
-              <td>{category.type}</td>
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Categories</h1>
+        <Link href="/categories/new" className="bg-blue-600 text-white px-4 py-2 rounded">
+          Add Category
+        </Link>
+      </div>
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left p-2">Name</th>
+              <th className="text-left p-2">Slug</th>
+              <th className="text-left p-2">Type</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <Link href="/categories/new" passHref>
-        <a>Add Category</a>
-      </Link>
+          </thead>
+          <tbody>
+            {categories.map((c) => (
+              <tr key={c.id} className="border-b">
+                <td className="p-2">{c.name}</td>
+                <td className="p-2">{c.slug}</td>
+                <td className="p-2">{c.type}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

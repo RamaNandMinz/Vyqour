@@ -1,53 +1,53 @@
-import { useQuery, useClient } from 'next/headers';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function NewCategoryPage() {
-  useClient();
   const router = useRouter();
-  const { data, error } = useQuery(
-    () =>
-      fetch(process.env.NEXT_PUBLIC_API_URL + "/api/categories")
-        .then((res) => res.json())
-  );
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [type, setType] = useState("PRIMARY");
+  const [submitting, setSubmitting] = useState(false);
 
-  if (!data) return <div>Loading...</div>;
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const name = e.target.name.value;
-    const slug = e.target.slug.value;
-    const type = e.target.type.value;
-
-    const response = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/categories", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, slug, type }),
-    });
-
-    const data = await response.json();
-    router.push("/categories");
+    setSubmitting(true);
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/categories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, slug, type }),
+      });
+      router.push("/categories");
+    } catch (err) {
+      console.error(err);
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div>
-      <h1>Create New Category</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Name:
-          <input type="text" name="name" />
-        </label>
-        <label>
-          Slug:
-          <input type="text" name="slug" />
-        </label>
-        <label>
-          Type:
-          <input type="text" name="type" />
-        </label>
-        <button type="submit">Create Category</button>
+    <div className="p-8 max-w-md">
+      <h1 className="text-2xl font-bold mb-4">Add Category</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block mb-1">Name</label>
+          <input className="border p-2 w-full" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div>
+          <label className="block mb-1">Slug</label>
+          <input className="border p-2 w-full" value={slug} onChange={(e) => setSlug(e.target.value)} required />
+        </div>
+        <div>
+          <label className="block mb-1">Type</label>
+          <select className="border p-2 w-full" value={type} onChange={(e) => setType(e.target.value)}>
+            <option value="PRIMARY">PRIMARY</option>
+            <option value="ACCESSORY">ACCESSORY</option>
+          </select>
+        </div>
+        <button type="submit" disabled={submitting} className="bg-blue-600 text-white px-4 py-2 rounded">
+          {submitting ? "Saving..." : "Save"}
+        </button>
       </form>
     </div>
   );
