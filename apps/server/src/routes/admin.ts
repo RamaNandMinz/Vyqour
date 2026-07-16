@@ -1,109 +1,65 @@
-import type { FastifyInstance } from 'fastify';
-import { z } from 'zod';
-import prisma from '../lib/prisma.js';
+import { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { prisma } from "../lib/prisma.js";
+
+const categorySchema = z.object({
+  name: z.string(),
+  slug: z.string(),
+  type: z.enum(["PRIMARY", "ACCESSORY"]),
+});
+
+const productSchema = z.object({
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().optional(),
+  categoryId: z.string(),
+  basePrice: z.number(),
+  qikinkSku: z.string().optional(),
+  images: z.array(z.string()).default([]),
+  isActive: z.boolean().default(true),
+  isBestSeller: z.boolean().default(false),
+  isNewArrival: z.boolean().default(false),
+});
+
+const collectionSchema = z.object({
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().optional(),
+  heroImage: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
 
 export async function adminRoutes(app: FastifyInstance) {
-  app.post('/admin/categories', {
-    schema: {
-      body: z.object({
-        name: z.string().min(3).max(50),
-        slug: z.string().min(3).max(50),
-        type: z.string().min(3).max(50),
-      }),
-    },
-    handler: async (request, reply) => {
-      try {
-        const { name, slug, type } = request.body;
-        const category = await prisma.category.create({
-          data: {
-            name,
-            slug,
-            type,
-          },
-        });
-        return category;
-      } catch (error) {
-        return reply.code(400).send(error);
-      }
-    },
+  app.post("/admin/categories", async (request, reply) => {
+    const parsed = categorySchema.safeParse(request.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+    try {
+      const category = await prisma.category.create({ data: parsed.data });
+      return reply.send(category);
+    } catch (err: any) {
+      return reply.status(400).send({ error: err.message });
+    }
   });
 
-  app.post('/admin/products', {
-    schema: {
-      body: z.object({
-        name: z.string().min(3).max(50),
-        slug: z.string().min(3).max(50),
-        description: z.string().min(10).max(200),
-        categoryId: z.number().int().positive(),
-        basePrice: z.number().int().positive(),
-        quickSku: z.string().min(3).max(20),
-        images: z.array(z.string().url()),
-        isActive: z.boolean(),
-        isBestSeller: z.boolean(),
-        isNewArrival: z.boolean(),
-      }),
-    },
-    handler: async (request, reply) => {
-      try {
-        const {
-          name,
-          slug,
-          description,
-          categoryId,
-          basePrice,
-          quickSku,
-          images,
-          isActive,
-          isBestSeller,
-          isNewArrival,
-        } = request.body;
-        const product = await prisma.product.create({
-          data: {
-            name,
-            slug,
-            description,
-            categoryId,
-            basePrice,
-            quickSku,
-            images,
-            isActive,
-            isBestSeller,
-            isNewArrival,
-          },
-        });
-        return product;
-      } catch (error) {
-        return reply.code(400).send(error);
-      }
-    },
+  app.post("/admin/products", async (request, reply) => {
+    const parsed = productSchema.safeParse(request.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+    try {
+      const product = await prisma.product.create({ data: parsed.data });
+      return reply.send(product);
+    } catch (err: any) {
+      return reply.status(400).send({ error: err.message });
+    }
   });
 
-  app.post('/admin/collections', {
-    schema: {
-      body: z.object({
-        name: z.string().min(3).max(50),
-        slug: z.string().min(3).max(50),
-        description: z.string().min(10).max(200),
-        heroImage: z.string().url(),
-        isActive: z.boolean(),
-      }),
-    },
-    handler: async (request, reply) => {
-      try {
-        const { name, slug, description, heroImage, isActive } = request.body;
-        const collection = await prisma.collection.create({
-          data: {
-            name,
-            slug,
-            description,
-            heroImage,
-            isActive,
-          },
-        });
-        return collection;
-      } catch (error) {
-        return reply.code(400).send(error);
-      }
-    },
+  app.post("/admin/collections", async (request, reply) => {
+    const parsed = collectionSchema.safeParse(request.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+    try {
+      const collection = await prisma.collection.create({ data: parsed.data });
+      return reply.send(collection);
+    } catch (err: any) {
+      return reply.status(400).send({ error: err.message });
+    }
   });
 }
