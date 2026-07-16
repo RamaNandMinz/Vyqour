@@ -1,21 +1,13 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["pinned-queries"]
-}
-
-model Cart {
+model User {
   id       String   @id @default(cuid())
-  products  Product[]
+  name     String
+  email    String   @unique
+  password String
 }
 
 model Product {
   id       String   @id @default(cuid())
   name     String
   price    Float
-  carts    Cart[]
+  description String
 }
